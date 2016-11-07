@@ -65,8 +65,8 @@ public class budgetProgram{
 		
 		FlowLayout payControls = new FlowLayout();
 		JPanel payControlsPanel = new JPanel(payControls);
-		payControlsPanel.add(new JButton("Add"));
-		payControlsPanel.add(new JButton("Remove"));
+		payControlsPanel.add(new JButton("Add")); //button implements actionListener, updateStats
+		payControlsPanel.add(new JButton("Remove")); //button implements actionListener, updateStats
 		payControlsPanel.setBackground(Color.GREEN);
 		payControlsPanel.setMaximumSize(new Dimension(350,50));
 		
@@ -90,18 +90,46 @@ public class budgetProgram{
 		GridBagConstraints gbc = new GridBagConstraints();
 		mainPanel.add(statsPanel, gbc);
 
-
-		//Dimension printDim = new Dimension(
-		//System.out.println(Component.CENTER_ALIGNMENT);
+		//create right comboBox and checkboxes
+		JPanel rightPanel = new JPanel(new GridBagLayout());
+		
+			//create comboBox, need to create public class and implement actionListener, will updateStats
+			String[] dateRanges = {"Today", "This Week","This Month","Last Month", "This Year"};
+			JComboBox dateRange = new JComboBox(dateRanges);
+			//GridBagConstraints rgbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			rightPanel.add(dateRange, gbc);
+			
+			//gridBagLayout for the scrolling list of checkboxes
+			//GridBagConstraints slgbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 1;
+			gbc.gridheight = 2;
+			gbc.ipady = 400;
+			String[] payTypes = {"Fun","Food","Gas","Rent","Utilities","Cocaine"};
+			JList<String> typeList = new JList<String>(payTypes);
+			JScrollPane typeScroller = new JScrollPane(typeList);
+			typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+			typeScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+			rightPanel.add(typeScroller, gbc);
 		
 		 
-		 //Add simple panel to frame
+		 //Add simple panels to frame
 		frame.getContentPane().add(BorderLayout.CENTER,mainPanel);
 		frame.getContentPane().add(BorderLayout.WEST,leftBox);
+		frame.getContentPane().add(BorderLayout.EAST,rightPanel);
 		frame.setSize(1000,800);
 		frame.setVisible(true);
 		 
 		 
 	}
+	
+	/*
+	public class JComboBox implements ActionListener{
+	
+	}
+	*/
 
 }
