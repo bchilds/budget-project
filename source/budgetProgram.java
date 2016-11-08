@@ -8,6 +8,7 @@ import javax.swing.border.*;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.text.*;
 //import java.io.*;
 
 /*frames
@@ -60,7 +61,7 @@ public class budgetProgram{
 		
 		//payScroller creation
 		JScrollPane payScroller = new JScrollPane(payList);
-		payScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		payScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		payScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		
 		FlowLayout payControls = new FlowLayout();
@@ -83,7 +84,7 @@ public class budgetProgram{
 		TitledBorder statsBorder = new TitledBorder(new LineBorder(Color.BLACK), "Stats",TitledBorder.CENTER,TitledBorder.ABOVE_TOP);
 		statsPanel.setMaximumSize(new Dimension(850,800));
 		statsPanel.setPreferredSize(new Dimension(750, 600));
-		statsPanel.setMinimumSize(new Dimension(400,250));
+		statsPanel.setMinimumSize(new Dimension(750,600));
 		statsBorder.setTitleColor(Color.BLACK);
 		statsPanel.setBorder(statsBorder);
 		mainPanel.setLayout(new GridBagLayout());
@@ -92,36 +93,58 @@ public class budgetProgram{
 
 		//create right comboBox and checkboxes
 		JPanel rightPanel = new JPanel(new GridBagLayout());
+		rightPanel.setMinimumSize(new Dimension(600,600));
 		
 			//create comboBox, need to create public class and implement actionListener, will updateStats
 			String[] dateRanges = {"Today", "This Week","This Month","Last Month", "This Year"};
 			JComboBox dateRange = new JComboBox(dateRanges);
-			//GridBagConstraints rgbc = new GridBagConstraints();
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.gridx = 0;
 			gbc.gridy = 0;
 			rightPanel.add(dateRange, gbc);
 			
 			//gridBagLayout for the scrolling list of checkboxes
-			//GridBagConstraints slgbc = new GridBagConstraints();
 			gbc.gridx = 0;
 			gbc.gridy = 1;
 			gbc.gridheight = 2;
 			gbc.ipady = 400;
-			String[] payTypes = {"Fun","Food","Gas","Rent","Utilities","Cocaine"};
-			JList<String> typeList = new JList<String>(payTypes);
-			JScrollPane typeScroller = new JScrollPane(typeList);
-			typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+			gbc.ipadx = 125;
+			//**** for testing. These need to be generated from the payment objects.
+			String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health","Cocaine"};
+			
+			/* Initial thought was to use JList. It looks like a scrollable panel is better.
+			JList<JCheckBox> typeList = new JList<JCheckBox>();
+			for(String s: payTypes){
+				typeList.add( new JCheckBox(s) );
+			}
+			*/
+			
+				//JScrollPane typeScroller = new JScrollPane(typeList);
+				//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
+				JPanel scrollablePanel = new JPanel();
+				TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
+				scrollablePanel.setBorder(typeBorder);
+				scrollablePanel.setLayout( new BoxLayout(scrollablePanel, BoxLayout.Y_AXIS));
+				//create a JCheckBox for each String in payTypes
+				for(String s: payTypes){
+					scrollablePanel.add( new JCheckBox(s) );
+				}
+				
+			//add scrollablePanel to typeScroller	
+			JScrollPane typeScroller = new JScrollPane(scrollablePanel);	
+			typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 			typeScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+			//add typeScroller to rightPanel
 			rightPanel.add(typeScroller, gbc);
 		
 		 
-		 //Add simple panels to frame
+		 //Add base panels to frame
 		frame.getContentPane().add(BorderLayout.CENTER,mainPanel);
 		frame.getContentPane().add(BorderLayout.WEST,leftBox);
 		frame.getContentPane().add(BorderLayout.EAST,rightPanel);
-		frame.setSize(1000,800);
+		frame.setSize(1200,1000);
 		frame.setVisible(true);
+		frame.setLocationRelativeTo(null);
 		 
 		 
 	}
@@ -131,5 +154,92 @@ public class budgetProgram{
 	
 	}
 	*/
+	
+		/*
+	public class JCheckBox implements ActionListener{
+	
+	}
+	*/
+	
+	
+	/*
+	What goes into Payments? 
+	float Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
+	*/
+	public class Payment {
+	
+		private String payName;
+		private float Amount;
+		private payType Type;
+		private String datePaid;
+		private String dateAdded;
+		private String payNote;
+
+		private Payment(){
+			String dateAdded = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
+		}
+
+		public void setName(String n){
+			//verification stuff here
+			payName = n;
+		}
+
+		public void setAmount(float amt){
+			Amount = amt;
+		}
+
+		public void setType(){
+			
+		}
+
+		public void setDatePaid(){
+			//date validation here
+		}
+
+		public void setDateAdded(){
+			//might be unnecessary
+		}
+
+		public void setPayNote(String note){
+			//some sort of validation here
+			payNote = note;
+		}
+
+		public String getName(){
+			return payName;
+		}
+
+		public float getAmount(){
+			return Amount;
+		}
+
+		public void getType(){
+			
+		}
+
+		public String getDatePaid(){
+			return datePaid;
+		}
+
+		public String getDateAdded(){
+			return dateAdded;
+		}
+
+		public String getPayNote(){
+			return payNote;
+		}
+	
+	//a valid Payment REQUIRES an amount. Other data is just helpful.
+	
+	
+	}
+	
+	public class payType{
+	
+		private String typeName;
+		private boolean isEnabled;
+		private int numPayments;
+	
+	}
 
 }
