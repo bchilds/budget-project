@@ -13,12 +13,14 @@ import java.text.*;
 
 /*frames
 frame
-leftBox
+newPayFrame
 */
 
 /*Panels
 mainPanel
 payControlsPanel
+statsPanel
+rightPanel
 */
 
 /* Layout Managers
@@ -39,7 +41,9 @@ public class budgetProgram{
 	
 	
 	public static void main(String[] args){
+	
 		new budgetProgram().go();
+
 	}
 	
 	
@@ -79,7 +83,6 @@ public class budgetProgram{
 		
 		//create center stats area
 		JPanel statsPanel = new JPanel();
-		//statsPanel.setBackground(Color.BLUE);
 		//create border to put into panel, because '90s
 		TitledBorder statsBorder = new TitledBorder(new LineBorder(Color.BLACK), "Stats",TitledBorder.CENTER,TitledBorder.ABOVE_TOP);
 		statsPanel.setMaximumSize(new Dimension(850,800));
@@ -111,15 +114,7 @@ public class budgetProgram{
 			gbc.ipadx = 125;
 			//**** for testing. These need to be generated from the payment objects.
 			String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health","Cocaine"};
-			
-			/* Initial thought was to use JList. It looks like a scrollable panel is better.
-			JList<JCheckBox> typeList = new JList<JCheckBox>();
-			for(String s: payTypes){
-				typeList.add( new JCheckBox(s) );
-			}
-			*/
-			
-				//JScrollPane typeScroller = new JScrollPane(typeList);
+
 				//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
 				JPanel scrollablePanel = new JPanel();
 				TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
@@ -149,17 +144,73 @@ public class budgetProgram{
 		 
 	}
 	
-	/*
-	public class JComboBox implements ActionListener{
+	public void newPaymentGo(){
+		
+		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
+		JFrame newPayFrame = new JFrame("New Payment");
+		Payment newPayment = new Payment();
+		JPanel newPaymentPanel = new JPanel();
+		newPaymentPanel.setLayout( new BoxLayout(newPaymentPanel,BoxLayout.Y_AXIS));
+		
+		//add fields to take new Payment input
+		
+		JTextField newPayName = new JTextField();
+		JTextField newPayAmount = new JTextField();
+		//JTextField newPayType = new JTextField();
+		JTextField newPayDate = new JTextField();
+		JTextArea newPayNote = new JTextArea(6,20);
+		JButton saveNewPayment = new JButton("Save Payment");
+		JLabel newPayNameLabel = new JLabel("Payment Name: ");
+		newPayNameLabel.setLabelFor(newPayName);
+		JLabel newPayAmountLabel = new JLabel("Payment Amount: ");
+		newPayAmountLabel.setLabelFor(newPayAmount);
+		JLabel newPayDateLabel = new JLabel("Payment Date: ");
+		newPayDateLabel.setLabelFor(newPayDate);
+		JLabel newPayNoteLabel = new JLabel("Payment Note: ");
+		newPayNoteLabel.setLabelFor(newPayNote);
+		
+		//add button to save
+		//button will run a method to save all the inputs
+		
+		//build UI
+		newPaymentPanel.add(newPayNameLabel);
+		newPaymentPanel.add(newPayName);
+		newPaymentPanel.add(newPayAmountLabel);
+		newPaymentPanel.add(newPayAmount);
+		newPaymentPanel.add(newPayDateLabel);
+		newPaymentPanel.add(newPayDate);
+		newPaymentPanel.add(newPayNoteLabel);
+		newPaymentPanel.add(newPayNote);
+		newPaymentPanel.add(Box.createRigidArea( new Dimension(95, 0) ) );
+		newPaymentPanel.add(Box.createRigidArea( new Dimension(0, 25) ) );
+		newPaymentPanel.add(saveNewPayment);
+		newPayFrame.setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		newPayFrame.getContentPane().add(newPaymentPanel,gbc);
+		
+		newPayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		newPayFrame.setSize(400,350);
+		newPayFrame.setVisible(true);
+		newPayFrame.setLocationRelativeTo(null);
+		
+	}//end newPaymentGo()
 	
+	
+	
+	class AddNewPayment implements ActionListener{
+		public void actionPerformed(ActionEvent event){
+					new budgetProgram().newPaymentGo();
+		}
 	}
-	*/
 	
-		/*
-	public class JCheckBox implements ActionListener{
 	
+	
+	class RemovePayment implements ActionListener{
+		public void actionPerformed(ActionEvent event){
+			
+		}
 	}
-	*/
+	
 	
 	
 	/*
@@ -241,5 +292,15 @@ public class budgetProgram{
 		private int numPayments;
 	
 	}
+	
+	public class totalStats{
+	
+	//contains avg, max, min floats.
+	//contains a method for refreshing calculation of those values with inputs.
+	//not sure what the inputs are yet. A list of Payments?
+	
+	}
+	
+	
 
 }
