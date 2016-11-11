@@ -39,26 +39,31 @@ public class budgetProgram{
 	private JButton addPayment;
 	private JButton delPayment;
 	
-	
 	public static void main(String[] args){
-	
 		new budgetProgram().go();
 
 	}
 	
 	
 	public void go(){
+
+
+	
+		
 		frame = new JFrame("Budget Yourself");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainPanel = new JPanel();
 		Font titleFont = new Font("sanserif",Font.BOLD,36);
-		 
+
 		//insert contents
 		//First, scrolling list of Payments. Empty for now.
-		String[] testPayments = {"Payment 1", "Payment 2", "Payment 3"};
-		JList<String> payList = new JList<String>(testPayments);
-		 
-		 
+		//testPayments here
+
+		DefaultListModel payListModel = new DefaultListModel();
+		for( int i = 0; i < 3; i++){
+			payListModel.addElement("Test " + (i+1));
+		}
+		JList payList = new JList (payListModel);
 		//crate box layout manager containing scroller and flowlayout with buttons 
 		Box leftBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -70,8 +75,31 @@ public class budgetProgram{
 		
 		FlowLayout payControls = new FlowLayout();
 		JPanel payControlsPanel = new JPanel(payControls);
-		payControlsPanel.add(new JButton("Add")); //button implements actionListener, updateStats
-		payControlsPanel.add(new JButton("Remove")); //button implements actionListener, updateStats
+		
+		//create actionListeners for buttons
+		class AddNewPayment implements ActionListener{
+		public void actionPerformed(ActionEvent event){
+					new budgetProgram().newPaymentGo();
+					//payListModel.addElement("Test " + (payListModel.size()+1) );
+			}
+		}
+		
+		class RemovePayment implements ActionListener{
+			public void actionPerformed(ActionEvent event){
+				
+			}
+		}
+		
+		//create the Add button and its functionality
+		addPayment = new JButton("Add");
+		addPayment.addActionListener( new AddNewPayment() );
+		payControlsPanel.add(addPayment);
+		
+		//create the Remove button and its  functionality
+		delPayment = new JButton("Remove");
+		payControlsPanel.add(delPayment); //button implements actionListener, updateStats
+		
+		
 		payControlsPanel.setBackground(Color.GREEN);
 		payControlsPanel.setMaximumSize(new Dimension(350,50));
 		
@@ -98,39 +126,39 @@ public class budgetProgram{
 		JPanel rightPanel = new JPanel(new GridBagLayout());
 		rightPanel.setMinimumSize(new Dimension(600,600));
 		
-			//create comboBox, need to create public class and implement actionListener, will updateStats
-			String[] dateRanges = {"Today", "This Week","This Month","Last Month", "This Year"};
-			JComboBox dateRange = new JComboBox(dateRanges);
-			gbc.fill = GridBagConstraints.HORIZONTAL;
-			gbc.gridx = 0;
-			gbc.gridy = 0;
-			rightPanel.add(dateRange, gbc);
-			
-			//gridBagLayout for the scrolling list of checkboxes
-			gbc.gridx = 0;
-			gbc.gridy = 1;
-			gbc.gridheight = 2;
-			gbc.ipady = 400;
-			gbc.ipadx = 125;
-			//**** for testing. These need to be generated from the payment objects.
-			String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health","Cocaine"};
+		//create comboBox, need to create public class and implement actionListener, will updateStats
+		String[] dateRanges = {"Today", "This Week","This Month","Last Month", "This Year"};
+		JComboBox dateRange = new JComboBox(dateRanges);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		rightPanel.add(dateRange, gbc);
+		
+		//gridBagLayout for the scrolling list of checkboxes
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		gbc.gridheight = 2;
+		gbc.ipady = 400;
+		gbc.ipadx = 125;
+		//**** for testing. These need to be generated from the payment objects.
+		String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health","Cocaine"};
 
-				//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
-				JPanel scrollablePanel = new JPanel();
-				TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
-				scrollablePanel.setBorder(typeBorder);
-				scrollablePanel.setLayout( new BoxLayout(scrollablePanel, BoxLayout.Y_AXIS));
-				//create a JCheckBox for each String in payTypes
-				for(String s: payTypes){
-					scrollablePanel.add( new JCheckBox(s) );
-				}
-				
-			//add scrollablePanel to typeScroller	
-			JScrollPane typeScroller = new JScrollPane(scrollablePanel);	
-			typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-			typeScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-			//add typeScroller to rightPanel
-			rightPanel.add(typeScroller, gbc);
+			//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
+			JPanel scrollablePanel = new JPanel();
+			TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
+			scrollablePanel.setBorder(typeBorder);
+			scrollablePanel.setLayout( new BoxLayout(scrollablePanel, BoxLayout.Y_AXIS));
+			//create a JCheckBox for each String in payTypes
+			for(String s: payTypes){
+				scrollablePanel.add( new JCheckBox(s) );
+			}
+			
+		//add scrollablePanel to typeScroller	
+		JScrollPane typeScroller = new JScrollPane(scrollablePanel);	
+		typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		typeScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		//add typeScroller to rightPanel
+		rightPanel.add(typeScroller, gbc);
 		
 		 
 		 //Add base panels to frame
@@ -140,7 +168,9 @@ public class budgetProgram{
 		frame.setSize(1200,1000);
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
-		 
+		
+		
+		
 		 
 	}
 	
@@ -188,29 +218,12 @@ public class budgetProgram{
 		GridBagConstraints gbc = new GridBagConstraints();
 		newPayFrame.getContentPane().add(newPaymentPanel,gbc);
 		
-		newPayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		//newPayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		newPayFrame.setSize(400,350);
-		newPayFrame.setVisible(true);
 		newPayFrame.setLocationRelativeTo(null);
-		
+		newPayFrame.setVisible(true);
+	
 	}//end newPaymentGo()
-	
-	
-	
-	class AddNewPayment implements ActionListener{
-		public void actionPerformed(ActionEvent event){
-					new budgetProgram().newPaymentGo();
-		}
-	}
-	
-	
-	
-	class RemovePayment implements ActionListener{
-		public void actionPerformed(ActionEvent event){
-			
-		}
-	}
-	
 	
 	
 	/*
