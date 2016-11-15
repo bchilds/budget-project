@@ -2,8 +2,8 @@ import java.util.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.*;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+//import javax.swing.JList;
+//import javax.swing.JScrollPane;
 import javax.swing.border.*;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -47,23 +47,23 @@ public class budgetProgram{
 	
 	public void go(){
 
-
-	
-		
 		frame = new JFrame("Budget Yourself");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainPanel = new JPanel();
 		Font titleFont = new Font("sanserif",Font.BOLD,36);
 
 		//insert contents
-		//First, scrolling list of Payments. Empty for now.
-		//testPayments here
-
 		DefaultListModel payListModel = new DefaultListModel();
+		/*
 		for( int i = 0; i < 3; i++){
 			payListModel.addElement("Test " + (i+1));
-		}
+		}*/
+		
+		//JList for Payments
 		JList payList = new JList (payListModel);
+		payList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION ); //prevents multiple selection
+		
+		
 		//crate box layout manager containing scroller and flowlayout with buttons 
 		Box leftBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -79,14 +79,22 @@ public class budgetProgram{
 		//create actionListeners for buttons
 		class AddNewPayment implements ActionListener{
 		public void actionPerformed(ActionEvent event){
-					new budgetProgram().newPaymentGo();
+					new budgetProgram().newPaymentGo(payListModel);
 					//payListModel.addElement("Test " + (payListModel.size()+1) );
 			}
 		}
 		
 		class RemovePayment implements ActionListener{
 			public void actionPerformed(ActionEvent event){
-				
+				//may want to add confirmation message? 
+				//single selection is forced.
+				System.out.println("Index: " + payList.getSelectedIndex() );
+				System.out.println(payList.isSelectionEmpty());
+				if( !payList.isSelectionEmpty() )
+				{
+					payListModel.remove( payList.getSelectedIndex() );
+					//NEEDS TO IMPLEMENT SAVE DATA METHOD
+				}
 			}
 		}
 		
@@ -97,29 +105,43 @@ public class budgetProgram{
 		
 		//create the Remove button and its  functionality
 		delPayment = new JButton("Remove");
+		delPayment.addActionListener ( new RemovePayment() );
 		payControlsPanel.add(delPayment); //button implements actionListener, updateStats
 		
 		
-		payControlsPanel.setBackground(Color.GREEN);
-		payControlsPanel.setMaximumSize(new Dimension(350,50));
+		//payControlsPanel.setBackground(Color.GREEN);
+		payControlsPanel.setMaximumSize(new Dimension(450,50));
 		
 		//add payScroller to layout manager
-		//create panel to control components?
 		leftBox.add(payScroller);
 		leftBox.add(payControlsPanel);	
 		
 		
 		//create center stats area
 		JPanel statsPanel = new JPanel();
+		JPanel graphPanel = new JPanel();
 		//create border to put into panel, because '90s
 		TitledBorder statsBorder = new TitledBorder(new LineBorder(Color.BLACK), "Stats",TitledBorder.CENTER,TitledBorder.ABOVE_TOP);
-		statsPanel.setMaximumSize(new Dimension(850,800));
-		statsPanel.setPreferredSize(new Dimension(750, 600));
-		statsPanel.setMinimumSize(new Dimension(750,600));
 		statsBorder.setTitleColor(Color.BLACK);
+		TitledBorder graphBorder  = new TitledBorder( new LineBorder(Color.BLUE), "Graph",TitledBorder.CENTER, TitledBorder.ABOVE_TOP);
+		graphBorder.setTitleColor(Color.BLACK);
+		
+		statsPanel.setMaximumSize(new Dimension(650,400));
+		statsPanel.setPreferredSize(new Dimension(650, 300));
+		statsPanel.setMinimumSize(new Dimension(650,300));
+		
+		graphPanel.setMaximumSize(new Dimension(650,500) );
+		graphPanel.setPreferredSize(new Dimension(650,500) );
+		graphPanel.setMinimumSize(new Dimension(650,500) );
+		
 		statsPanel.setBorder(statsBorder);
+		graphPanel.setBorder(graphBorder);
 		mainPanel.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.VERTICAL;
+		
+		mainPanel.add(graphPanel, gbc);
+		gbc.gridy = 1;
 		mainPanel.add(statsPanel, gbc);
 
 		//create right comboBox and checkboxes
@@ -140,8 +162,9 @@ public class budgetProgram{
 		gbc.gridheight = 2;
 		gbc.ipady = 400;
 		gbc.ipadx = 125;
+		
 		//**** for testing. These need to be generated from the payment objects.
-		String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health","Cocaine"};
+		String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health"};
 
 			//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
 			JPanel scrollablePanel = new JPanel();
@@ -168,13 +191,10 @@ public class budgetProgram{
 		frame.setSize(1200,1000);
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
-		
-		
-		
 		 
 	}
 	
-	public void newPaymentGo(){
+	public void newPaymentGo(DefaultListModel model){
 		
 		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
 		JFrame newPayFrame = new JFrame("New Payment");
@@ -189,7 +209,6 @@ public class budgetProgram{
 		//JTextField newPayType = new JTextField();
 		JTextField newPayDate = new JTextField();
 		JTextArea newPayNote = new JTextArea(6,20);
-		JButton saveNewPayment = new JButton("Save Payment");
 		JLabel newPayNameLabel = new JLabel("Payment Name: ");
 		newPayNameLabel.setLabelFor(newPayName);
 		JLabel newPayAmountLabel = new JLabel("Payment Amount: ");
@@ -201,6 +220,31 @@ public class budgetProgram{
 		
 		//add button to save
 		//button will run a method to save all the inputs
+		
+		//Need a method for "saving" Payment? Validates and adds it to the JList model.
+		//calls all the setter methods of the new payment from the fields in newPaymentGo() and adds it to JList
+		
+		class paymentSaveListener implements ActionListener
+		{
+			public void actionPerformed(ActionEvent event)
+				{
+					newPayment.setName( newPayName.getText() );
+					newPayment.setAmount( Double.parseDouble( newPayAmount.getText() ) );
+					newPayment.setPayNote( newPayNote.getText() );
+					newPayment.setDatePaid( newPayDate.getText() );
+					model.addElement(newPayment); //this adds the NAME to the list, meaning something gets added.
+					//now we need to add it to the JList of Payments. Name displays with a ListCellRenderer or toString
+					
+					//NEEDS TO IMPLEMENT METHOD - SERIALIZATION OF DATA INTO SAVE FILE
+					
+					//close JFrame
+					newPayFrame.setVisible(false);
+					newPayFrame.dispose();
+					
+				}
+		}
+		JButton saveNewPayment = new JButton("Save Payment");
+		saveNewPayment.addActionListener( new paymentSaveListener() );
 		
 		//build UI
 		newPaymentPanel.add(newPayNameLabel);
@@ -228,12 +272,12 @@ public class budgetProgram{
 	
 	/*
 	What goes into Payments? 
-	float Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
+	double Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
 	*/
 	public class Payment {
 	
 		private String payName;
-		private float Amount;
+		private double Amount;
 		private payType Type;
 		private String datePaid;
 		private String dateAdded;
@@ -241,14 +285,15 @@ public class budgetProgram{
 
 		private Payment(){
 			String dateAdded = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
+			String datePaid = dateAdded;
 		}
 
 		public void setName(String n){
-			//verification stuff here
+			//validation stuff here
 			payName = n;
 		}
 
-		public void setAmount(float amt){
+		public void setAmount(double amt){
 			Amount = amt;
 		}
 
@@ -256,12 +301,9 @@ public class budgetProgram{
 			
 		}
 
-		public void setDatePaid(){
+		public void setDatePaid(String date){
 			//date validation here
-		}
-
-		public void setDateAdded(){
-			//might be unnecessary
+			datePaid = date;
 		}
 
 		public void setPayNote(String note){
@@ -273,7 +315,7 @@ public class budgetProgram{
 			return payName;
 		}
 
-		public float getAmount(){
+		public double getAmount(){
 			return Amount;
 		}
 
@@ -293,16 +335,22 @@ public class budgetProgram{
 			return payNote;
 		}
 	
-	//a valid Payment REQUIRES an amount. Other data is just helpful.
+		public String toString(){
+			return payName + " - " + NumberFormat.getCurrencyInstance().format(Amount) + " - " + datePaid;
+		}
 	
-	
+	//a valid Payment REQUIRES an amount and a name.
 	}
 	
 	public class payType{
 	
 		private String typeName;
 		private boolean isEnabled;
-		private int numPayments;
+		//private int numPayments;
+		
+		public payType(String s){
+			typeName = s;
+		}
 	
 	}
 	
@@ -311,9 +359,23 @@ public class budgetProgram{
 	//contains avg, max, min floats.
 	//contains a method for refreshing calculation of those values with inputs.
 	//not sure what the inputs are yet. A list of Payments?
+	}
+	/*
+	//Need a method for saving payType
+	public void payTypeSave(){
+		
+	}
+	
+	//Need a method for import
+	public void importData(){
 	
 	}
 	
+	//Need a method for export
+	public void exportData(){
 	
-
+	}
+	//remember that filestream requires a try/catch
+	//create an arraylist of all the payTypes and serialize that with the saved payments
+*/
 }
