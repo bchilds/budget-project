@@ -2,14 +2,12 @@ import java.util.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.*;
-//import javax.swing.JList;
-//import javax.swing.JScrollPane;
 import javax.swing.border.*;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.*;
-//import java.io.*;
+import java.io.*;
 
 /*frames
 frame
@@ -32,7 +30,7 @@ leftGridBag
 //Compile and Run
 //cd ../source && javac -d ../classes budgetProgram.java && cd ../classes && java budgetProgram
 
-public class budgetProgram{
+public class budgetProgram implements Serializable{
 	
 	private JFrame frame; //frame for the entire program
 	JPanel mainPanel; //create main panel until new panels made
@@ -52,18 +50,30 @@ public class budgetProgram{
 		mainPanel = new JPanel();
 		Font titleFont = new Font("sanserif",Font.BOLD,36);
 
-		//insert contents
+		//create the default model
 		DefaultListModel payListModel = new DefaultListModel();
-		/*
-		for( int i = 0; i < 3; i++){
-			payListModel.addElement("Test " + (i+1));
-		}*/
 		
 		//JList for Payments
 		JList payList = new JList (payListModel);
 		payList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION ); //prevents multiple selection
 		
-		
+		//import any existing data
+		try {
+			FileInputStream inFile = new FileInputStream("budgetYourselfData.data");
+			ObjectInputStream is = new ObjectInputStream(inFile);
+			JList inList = (JList) is.readObject();
+			ListModel inModel = inList.getModel();
+				for(int i = 0; i < inModel.getSize(); i++){
+					payListModel.addElement(inModel.getElementAt(i));
+				}
+
+			} catch (FileNotFoundException ex){
+				//do nothing
+			}
+			catch(Exception ex){
+				ex.printStackTrace();
+			}
+
 		//crate box layout manager containing scroller and flowlayout with buttons 
 		Box leftBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -79,7 +89,7 @@ public class budgetProgram{
 		//create actionListeners for buttons
 		class AddNewPayment implements ActionListener{
 		public void actionPerformed(ActionEvent event){
-					new budgetProgram().newPaymentGo(payListModel);
+					new budgetProgram().newPaymentGo(payListModel, payList);
 					//payListModel.addElement("Test " + (payListModel.size()+1) );
 			}
 		}
@@ -88,12 +98,12 @@ public class budgetProgram{
 			public void actionPerformed(ActionEvent event){
 				//may want to add confirmation message? 
 				//single selection is forced.
-				System.out.println("Index: " + payList.getSelectedIndex() );
-				System.out.println(payList.isSelectionEmpty());
+				//System.out.println("Index: " + payList.getSelectedIndex() );
+				//System.out.println(payList.isSelectionEmpty());
 				if( !payList.isSelectionEmpty() )
 				{
 					payListModel.remove( payList.getSelectedIndex() );
-					//NEEDS TO IMPLEMENT SAVE DATA METHOD
+					new budgetProgram().exportData(payList);
 				}
 			}
 		}
@@ -138,15 +148,15 @@ public class budgetProgram{
 		graphPanel.setBorder(graphBorder);
 		mainPanel.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.VERTICAL;
 		
 		mainPanel.add(graphPanel, gbc);
 		gbc.gridy = 1;
+		gbc.insets = new Insets(10,0,0,0);
 		mainPanel.add(statsPanel, gbc);
 
 		//create right comboBox and checkboxes
 		JPanel rightPanel = new JPanel(new GridBagLayout());
-		rightPanel.setMinimumSize(new Dimension(600,600));
+		rightPanel.setMinimumSize(new Dimension(200,600));
 		
 		//create comboBox, need to create public class and implement actionListener, will updateStats
 		String[] dateRanges = {"Today", "This Week","This Month","Last Month", "This Year"};
@@ -191,10 +201,66 @@ public class budgetProgram{
 		frame.setSize(1200,1000);
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
-		 
-	}
+		
+		class totalStats
+		{//Inner class of budgetProgram.go()
 	
-	public void newPaymentGo(DefaultListModel model){
+		//contains avg, max, min floats.
+		//contains a method for refreshing calculation of those values with inputs.
+		//not sure what the inputs are yet. A list of Payments?
+	
+			private float avg;
+			private float max;
+			private float min;
+			private float selAvg;
+			private float selMax;
+			private float selMin;
+			private JLabel totalAvgLabel;
+			private JLabel totalMaxLabel;
+			private JLabel totalMinLabel;
+			private JLabel selAvgLabel;
+			private JLabel selMaxLabel;
+			private JLabel selMinLabel;
+			ArrayList<String> displayStats;//need hash?
+			private JList selectedList;
+		
+			public totalStats(){
+				avg = 0;
+				max = 0;
+				min = 0;
+				selAvg = 0;
+				selMax = 0;
+				selMin = 0;
+				this.updateStats(payList);
+			}
+		
+			public void updateStats(JList payList)
+			{
+				//go through JList and do math on entire list of payments
+				//go through JList and do math on entire list of SELECTED payments
+				
+				JLabel totalAvgLabel = new JLabel("<HTML>The total average is: <U>" + avg + "</U></HTML>");
+				JLabel totalMaxLabel = new JLabel("<HTML>The total max is: <U>" + max + "</U></HTML>");
+				JLabel totalMinLabel = new JLabel("<HTML>The total min is: <U>" + min + "</U></HTML>");
+				JLabel selAvgLabel = new JLabel("<HTML>The selected average is: <U>" + selAvg + "</U></HTML>");
+				JLabel selMaxLabel = new JLabel("<HTML>The selected max is: <U>" + selMax + "</U></HTML>");
+				JLabel selMinLabel = new JLabel("<HTML>The selected min is: <U>" + selMin + "</U></HTML>");
+				
+				statsPanel.add(totalAvgLabel);
+				statsPanel.add(totalMaxLabel);
+				statsPanel.add(totalMinLabel);
+				statsPanel.add(selAvgLabel);
+				statsPanel.add(selMaxLabel);
+				statsPanel.add(selMinLabel);
+				
+			}//end updateStats
+		
+		
+		}//end totalStats
+	 
+	}//end go()
+	
+	public void newPaymentGo(DefaultListModel model, JList payList){
 		
 		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
 		JFrame newPayFrame = new JFrame("New Payment");
@@ -228,19 +294,24 @@ public class budgetProgram{
 		{
 			public void actionPerformed(ActionEvent event)
 				{
+				try{
 					newPayment.setName( newPayName.getText() );
 					newPayment.setAmount( Double.parseDouble( newPayAmount.getText() ) );
 					newPayment.setPayNote( newPayNote.getText() );
 					newPayment.setDatePaid( newPayDate.getText() );
 					model.addElement(newPayment); //this adds the NAME to the list, meaning something gets added.
 					//now we need to add it to the JList of Payments. Name displays with a ListCellRenderer or toString
-					
+					} catch(Exception ex) {
+						ex.printStackTrace();
+					}
 					//NEEDS TO IMPLEMENT METHOD - SERIALIZATION OF DATA INTO SAVE FILE
+					finally {
+					new budgetProgram().exportData(payList);
 					
 					//close JFrame
 					newPayFrame.setVisible(false);
 					newPayFrame.dispose();
-					
+					}
 				}
 		}
 		JButton saveNewPayment = new JButton("Save Payment");
@@ -274,7 +345,8 @@ public class budgetProgram{
 	What goes into Payments? 
 	double Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
 	*/
-	public class Payment {
+	public class Payment implements Serializable 
+	{
 	
 		private String payName;
 		private double Amount;
@@ -283,17 +355,20 @@ public class budgetProgram{
 		private String dateAdded;
 		private String payNote;
 
-		private Payment(){
+		private Payment()
+		{
 			String dateAdded = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
-			String datePaid = dateAdded;
+			String datePaid = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
 		}
 
-		public void setName(String n){
+		public void setName(String n)
+		{
 			//validation stuff here
 			payName = n;
 		}
 
-		public void setAmount(double amt){
+		public void setAmount(double amt)
+		{
 			Amount = amt;
 		}
 
@@ -301,81 +376,88 @@ public class budgetProgram{
 			
 		}
 
-		public void setDatePaid(String date){
+		public void setDatePaid(String date)
+		{
 			//date validation here
 			datePaid = date;
 		}
 
-		public void setPayNote(String note){
+		public void setPayNote(String note)
+		{
 			//some sort of validation here
 			payNote = note;
 		}
 
-		public String getName(){
+		public String getName()
+		{
 			return payName;
 		}
 
-		public double getAmount(){
+		public double getAmount()
+		{
 			return Amount;
 		}
 
-		public void getType(){
+		public void getType()
+		{
 			
 		}
 
-		public String getDatePaid(){
+		public String getDatePaid()
+		{
 			return datePaid;
 		}
 
-		public String getDateAdded(){
+		public String getDateAdded()
+		{
 			return dateAdded;
 		}
 
-		public String getPayNote(){
+		public String getPayNote()
+		{
 			return payNote;
 		}
 	
-		public String toString(){
+		public String toString()
+		{
 			return payName + " - " + NumberFormat.getCurrencyInstance().format(Amount) + " - " + datePaid;
 		}
 	
 	//a valid Payment REQUIRES an amount and a name.
 	}
 	
-	public class payType{
+	public class payType
+	{
 	
 		private String typeName;
 		private boolean isEnabled;
 		//private int numPayments;
 		
-		public payType(String s){
+		public payType(String s)
+		{
 			typeName = s;
 		}
 	
 	}
 	
-	public class totalStats{
-	
-	//contains avg, max, min floats.
-	//contains a method for refreshing calculation of those values with inputs.
-	//not sure what the inputs are yet. A list of Payments?
-	}
-	/*
 	//Need a method for saving payType
-	public void payTypeSave(){
-		
-	}
-	
-	//Need a method for import
-	public void importData(){
-	
+	public void payTypeSave(JList payList){
+
 	}
 	
 	//Need a method for export
-	public void exportData(){
-	
+	public void exportData(JList payList)
+	{
+			//write with outputstream
+		try {
+			FileOutputStream f_out = new FileOutputStream("budgetYourselfData.data");
+			ObjectOutputStream o_out = new ObjectOutputStream(f_out);
+			o_out.writeObject(payList);
+			o_out.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 	//remember that filestream requires a try/catch
 	//create an arraylist of all the payTypes and serialize that with the saved payments
-*/
 }
