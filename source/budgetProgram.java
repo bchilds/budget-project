@@ -44,7 +44,7 @@ public class budgetProgram implements Serializable{
 	
 	
 	public void go(){
-
+		GridBagConstraints gbc = new GridBagConstraints();
 		frame = new JFrame("Budget Yourself");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainPanel = new JPanel();
@@ -57,7 +57,7 @@ public class budgetProgram implements Serializable{
 		JList payList = new JList (payListModel);
 		payList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION ); //prevents multiple selection
 		
-		//import any existing data
+		//import any existing data. I wanted to make this its own method, but this worked best with the current design.
 		try {
 			FileInputStream inFile = new FileInputStream("budgetYourselfData.data");
 			ObjectInputStream is = new ObjectInputStream(inFile);
@@ -74,9 +74,176 @@ public class budgetProgram implements Serializable{
 				ex.printStackTrace();
 			}
 
-		//crate box layout manager containing scroller and flowlayout with buttons 
-		Box leftBox = new Box(BoxLayout.Y_AXIS);
+
+
+		//create center stats area
+		JPanel statsPanel = new JPanel();
+		JPanel graphPanel = new JPanel();
+		//create border to put into panel, because '90s
+		TitledBorder statsBorder = new TitledBorder(new LineBorder(Color.BLACK), "Stats",TitledBorder.CENTER,TitledBorder.ABOVE_TOP);
+		statsBorder.setTitleColor(Color.BLACK);
+		TitledBorder graphBorder  = new TitledBorder( new LineBorder(Color.BLUE), "Graph",TitledBorder.CENTER, TitledBorder.ABOVE_TOP);
+		graphBorder.setTitleColor(Color.BLACK);
 		
+		statsPanel.setMaximumSize(new Dimension(650,400));
+		statsPanel.setPreferredSize(new Dimension(650, 300));
+		statsPanel.setMinimumSize(new Dimension(650,300));
+		JPanel statsPanelLeft = new JPanel();
+		JPanel statsPanelRight = new JPanel();
+		statsPanel.setLayout( new BoxLayout(statsPanel, BoxLayout.LINE_AXIS) );
+		//statsPanelLeft.setBackground(Color.green);
+		statsPanelLeft.setLayout( new GridBagLayout() );
+		statsPanelLeft.setPreferredSize( new Dimension(325,300) );
+		statsPanelRight.setPreferredSize( new Dimension(325,300) );
+		statsPanel.add(statsPanelLeft);
+		statsPanel.add( new JSeparator(SwingConstants.VERTICAL) );
+		statsPanel.add(statsPanelRight);
+		
+		
+		graphPanel.setMaximumSize(new Dimension(650,500) );
+		graphPanel.setPreferredSize(new Dimension(650,500) );
+		graphPanel.setMinimumSize(new Dimension(650,500) );
+		
+		statsPanel.setBorder(statsBorder);
+		graphPanel.setBorder(graphBorder);
+		mainPanel.setLayout(new GridBagLayout());
+
+		
+		mainPanel.add(graphPanel, gbc);
+		gbc.gridy = 1;
+		gbc.insets = new Insets(10,0,0,0);
+		mainPanel.add(statsPanel, gbc);
+
+
+
+		//create stats class
+		class totalStats
+		{//Inner class of budgetProgram.go()
+	
+		//contains avg, max, min floats.
+		//contains a method for refreshing calculation of those values with inputs.
+		//not sure what the inputs are yet. A list of Payments?
+	
+			private double avg;
+			private double max;
+			private double min;
+			private double selAvg;
+			private double selMax;
+			private double selMin;
+			private JLabel totalAvgLabel;
+			private JLabel totalMaxLabel;
+			private JLabel totalMinLabel;
+			private JLabel selAvgLabel;
+			private JLabel selMaxLabel;
+			private JLabel selMinLabel;
+			ArrayList<String> displayStats;//need hash?
+			private JList selectedList;
+		
+			public totalStats(){
+				avg = 0;
+				max = 0;
+				min = 0;
+				selAvg = 0;
+				selMax = 0;
+				selMin = 0;
+				this.updateStats(payList);
+			}
+		
+			public void updateStats(JList payList)
+			{
+				//Yeah, this section is ugly.
+				
+				ListModel model = payList.getModel();
+				
+				//go through JList and do math on entire list of payments
+				//go through JList and do math on entire list of SELECTED payments
+				double total = 0;
+				for(int i=0; i < model.getSize(); i++)
+				{
+					Payment pay = (Payment) model.getElementAt(i);
+					double  currentPay =  pay.getAmount();
+					total = total + currentPay;
+					
+					if(currentPay > max)
+					{
+						max = currentPay;
+					}
+					
+					if(i==0)
+					{
+						//for the first item, set baseline value
+						min = currentPay;
+					}
+					
+					if(currentPay < min)
+					{
+						min = currentPay;
+					}
+				}//end iterate
+				
+				//add post-iterate logic
+				avg = total / model.getSize();
+				
+				
+				
+				
+				//build UI with calculated values
+				JLabel totalAvgLabel = new JLabel("<HTML>The total average: " + NumberFormat.getCurrencyInstance().format(avg) + "</HTML>");
+				JLabel totalMaxLabel = new JLabel("<HTML>The total max: " + NumberFormat.getCurrencyInstance().format(max) + "</HTML>");
+				JLabel totalMinLabel = new JLabel("<HTML>The total min: " + NumberFormat.getCurrencyInstance().format(min) + "</HTML>");
+				JLabel selAvgLabel = new JLabel("<HTML>The selected average: " + NumberFormat.getCurrencyInstance().format(selAvg) + "</HTML>");
+				JLabel selMaxLabel = new JLabel("<HTML>The selected max: " + NumberFormat.getCurrencyInstance().format(selMax) + "</HTML>");
+				JLabel selMinLabel = new JLabel("<HTML>The selected min: " + NumberFormat.getCurrencyInstance().format(selMin) + "</HTML>");
+				
+				//reset GBC
+				gbc.fill = GridBagConstraints.VERTICAL;
+				gbc.gridheight = 1;
+				gbc.gridwidth = 1;
+				gbc.ipady = 0;
+				gbc.ipadx = 0;
+				gbc.gridy = 0;
+				gbc.gridx = 0;
+				gbc.anchor = GridBagConstraints.EAST;
+				statsPanelLeft.add(totalAvgLabel,gbc);
+				gbc.gridx = 0;
+				gbc.gridy = 1;
+				statsPanelLeft.add(totalMaxLabel,gbc);
+				gbc.gridx = 0;
+				gbc.gridy = 2;
+				statsPanelLeft.add(totalMinLabel,gbc);
+				gbc.gridx = 0;
+				gbc.gridy = 3;			
+				statsPanelLeft.add(selAvgLabel,gbc);
+				gbc.gridx = 0;
+				gbc.gridy = 4;
+				statsPanelLeft.add(selMaxLabel,gbc);
+				gbc.gridx = 0;
+				gbc.gridy = 5;
+				statsPanelLeft.add(selMinLabel,gbc);
+							
+			}//end updateStats
+		
+		
+		}//end totalStats
+		
+		//Create content for the stats panel to display. Will use this to refresh stats. Might refer for graph?
+		totalStats currentStats = new totalStats();
+		
+		
+		class RefreshStats implements ActionListener
+		{
+			public void actionPerformed(ActionEvent event)
+			{
+				currentStats.updateStats(payList);
+			}
+		}
+		JButton refreshStatsButton = new JButton("Refresh");
+		refreshStatsButton.addActionListener( new RefreshStats() );
+		mainPanel.add(refreshStatsButton, gbc);
+
+
+		//crate box layout manager containing scroller and flowlayout with buttons 
+		Box leftBox = new Box(BoxLayout.PAGE_AXIS);
 		
 		//payScroller creation
 		JScrollPane payScroller = new JScrollPane(payList);
@@ -87,10 +254,11 @@ public class budgetProgram implements Serializable{
 		JPanel payControlsPanel = new JPanel(payControls);
 		
 		//create actionListeners for buttons
-		class AddNewPayment implements ActionListener{
-		public void actionPerformed(ActionEvent event){
+		class AddNewPayment implements ActionListener
+		{
+			public void actionPerformed(ActionEvent event)
+			{
 					new budgetProgram().newPaymentGo(payListModel, payList);
-					//payListModel.addElement("Test " + (payListModel.size()+1) );
 			}
 		}
 		
@@ -126,33 +294,6 @@ public class budgetProgram implements Serializable{
 		leftBox.add(payScroller);
 		leftBox.add(payControlsPanel);	
 		
-		
-		//create center stats area
-		JPanel statsPanel = new JPanel();
-		JPanel graphPanel = new JPanel();
-		//create border to put into panel, because '90s
-		TitledBorder statsBorder = new TitledBorder(new LineBorder(Color.BLACK), "Stats",TitledBorder.CENTER,TitledBorder.ABOVE_TOP);
-		statsBorder.setTitleColor(Color.BLACK);
-		TitledBorder graphBorder  = new TitledBorder( new LineBorder(Color.BLUE), "Graph",TitledBorder.CENTER, TitledBorder.ABOVE_TOP);
-		graphBorder.setTitleColor(Color.BLACK);
-		
-		statsPanel.setMaximumSize(new Dimension(650,400));
-		statsPanel.setPreferredSize(new Dimension(650, 300));
-		statsPanel.setMinimumSize(new Dimension(650,300));
-		
-		graphPanel.setMaximumSize(new Dimension(650,500) );
-		graphPanel.setPreferredSize(new Dimension(650,500) );
-		graphPanel.setMinimumSize(new Dimension(650,500) );
-		
-		statsPanel.setBorder(statsBorder);
-		graphPanel.setBorder(graphBorder);
-		mainPanel.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-		
-		mainPanel.add(graphPanel, gbc);
-		gbc.gridy = 1;
-		gbc.insets = new Insets(10,0,0,0);
-		mainPanel.add(statsPanel, gbc);
 
 		//create right comboBox and checkboxes
 		JPanel rightPanel = new JPanel(new GridBagLayout());
@@ -180,7 +321,7 @@ public class budgetProgram implements Serializable{
 			JPanel scrollablePanel = new JPanel();
 			TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
 			scrollablePanel.setBorder(typeBorder);
-			scrollablePanel.setLayout( new BoxLayout(scrollablePanel, BoxLayout.Y_AXIS));
+			scrollablePanel.setLayout( new BoxLayout(scrollablePanel, BoxLayout.PAGE_AXIS));
 			//create a JCheckBox for each String in payTypes
 			for(String s: payTypes){
 				scrollablePanel.add( new JCheckBox(s) );
@@ -193,6 +334,7 @@ public class budgetProgram implements Serializable{
 		//add typeScroller to rightPanel
 		rightPanel.add(typeScroller, gbc);
 		
+
 		 
 		 //Add base panels to frame
 		frame.getContentPane().add(BorderLayout.CENTER,mainPanel);
@@ -202,61 +344,7 @@ public class budgetProgram implements Serializable{
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
 		
-		class totalStats
-		{//Inner class of budgetProgram.go()
-	
-		//contains avg, max, min floats.
-		//contains a method for refreshing calculation of those values with inputs.
-		//not sure what the inputs are yet. A list of Payments?
-	
-			private float avg;
-			private float max;
-			private float min;
-			private float selAvg;
-			private float selMax;
-			private float selMin;
-			private JLabel totalAvgLabel;
-			private JLabel totalMaxLabel;
-			private JLabel totalMinLabel;
-			private JLabel selAvgLabel;
-			private JLabel selMaxLabel;
-			private JLabel selMinLabel;
-			ArrayList<String> displayStats;//need hash?
-			private JList selectedList;
 		
-			public totalStats(){
-				avg = 0;
-				max = 0;
-				min = 0;
-				selAvg = 0;
-				selMax = 0;
-				selMin = 0;
-				this.updateStats(payList);
-			}
-		
-			public void updateStats(JList payList)
-			{
-				//go through JList and do math on entire list of payments
-				//go through JList and do math on entire list of SELECTED payments
-				
-				JLabel totalAvgLabel = new JLabel("<HTML>The total average is: <U>" + avg + "</U></HTML>");
-				JLabel totalMaxLabel = new JLabel("<HTML>The total max is: <U>" + max + "</U></HTML>");
-				JLabel totalMinLabel = new JLabel("<HTML>The total min is: <U>" + min + "</U></HTML>");
-				JLabel selAvgLabel = new JLabel("<HTML>The selected average is: <U>" + selAvg + "</U></HTML>");
-				JLabel selMaxLabel = new JLabel("<HTML>The selected max is: <U>" + selMax + "</U></HTML>");
-				JLabel selMinLabel = new JLabel("<HTML>The selected min is: <U>" + selMin + "</U></HTML>");
-				
-				statsPanel.add(totalAvgLabel);
-				statsPanel.add(totalMaxLabel);
-				statsPanel.add(totalMinLabel);
-				statsPanel.add(selAvgLabel);
-				statsPanel.add(selMaxLabel);
-				statsPanel.add(selMinLabel);
-				
-			}//end updateStats
-		
-		
-		}//end totalStats
 	 
 	}//end go()
 	
@@ -264,16 +352,17 @@ public class budgetProgram implements Serializable{
 		
 		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
 		JFrame newPayFrame = new JFrame("New Payment");
+		String today = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
 		Payment newPayment = new Payment();
 		JPanel newPaymentPanel = new JPanel();
-		newPaymentPanel.setLayout( new BoxLayout(newPaymentPanel,BoxLayout.Y_AXIS));
+		newPaymentPanel.setLayout( new BoxLayout(newPaymentPanel,BoxLayout.PAGE_AXIS));
 		
 		//add fields to take new Payment input
-		
+
 		JTextField newPayName = new JTextField();
 		JTextField newPayAmount = new JTextField();
 		//JTextField newPayType = new JTextField();
-		JTextField newPayDate = new JTextField();
+		JTextField newPayDate = new JTextField(today);
 		JTextArea newPayNote = new JTextArea(6,20);
 		JLabel newPayNameLabel = new JLabel("Payment Name: ");
 		newPayNameLabel.setLabelFor(newPayName);
@@ -304,7 +393,7 @@ public class budgetProgram implements Serializable{
 					} catch(Exception ex) {
 						ex.printStackTrace();
 					}
-					//NEEDS TO IMPLEMENT METHOD - SERIALIZATION OF DATA INTO SAVE FILE
+					//SERIALIZATION OF DATA INTO SAVE FILE
 					finally {
 					new budgetProgram().exportData(payList);
 					
@@ -333,7 +422,6 @@ public class budgetProgram implements Serializable{
 		GridBagConstraints gbc = new GridBagConstraints();
 		newPayFrame.getContentPane().add(newPaymentPanel,gbc);
 		
-		//newPayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		newPayFrame.setSize(400,350);
 		newPayFrame.setLocationRelativeTo(null);
 		newPayFrame.setVisible(true);
@@ -345,7 +433,7 @@ public class budgetProgram implements Serializable{
 	What goes into Payments? 
 	double Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
 	*/
-	public class Payment implements Serializable 
+	public class Payment implements Serializable
 	{
 	
 		private String payName;
@@ -357,8 +445,7 @@ public class budgetProgram implements Serializable{
 
 		private Payment()
 		{
-			String dateAdded = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
-			String datePaid = new SimpleDateFormat("MM/dd/yyyy").format( new java.util.Date() );
+
 		}
 
 		public void setName(String n)
@@ -380,6 +467,12 @@ public class budgetProgram implements Serializable{
 		{
 			//date validation here
 			datePaid = date;
+		}
+		
+		public void setDateAdded(String date)
+		{
+			//date validation here
+			dateAdded = date;
 		}
 
 		public void setPayNote(String note)
