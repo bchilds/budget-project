@@ -383,8 +383,9 @@ public class budgetProgram implements Serializable{
 						typeStats[typeIndex][3] = typeStats[typeIndex][3] + currentPay;
 						typeStats[typeIndex][4] = typeStats[typeIndex][4] + 1;
 					}	//end if
-					} catch(ArrayIndexOutOfBoundsException ex) { }		
+					} catch(ArrayIndexOutOfBoundsException ex) { 		
 						ex.printStackTrace();
+						}
 					}//end iterate
 				
 					//add post-iterate logic
@@ -593,10 +594,15 @@ public class budgetProgram implements Serializable{
 				JComboBox cb = (JComboBox)event.getSource();
 				if( ( !payTypeList.contains( cb.getSelectedItem() ) ) && ( event.getActionCommand().equals("comboBoxEdited") ) )
 				{
-					//System.out.println(event.getActionCommand());//cb.getSelectedItem().getClass());
-					payType newType = new payType( (String)cb.getSelectedItem() );
-					payTypeList.add(newType);
-					cb.setSelectedItem(newType);
+					//Validate that type is not empty string so that we don't create empty Types by accident.
+					if(!(cb.getSelectedItem().toString().trim().equals("")))
+					{
+						payType newType = new payType( (String)cb.getSelectedItem() );
+						payTypeList.add(newType);
+						cb.setSelectedItem(newType);
+					} else {
+						JOptionPane.showMessageDialog( null, "Please enter a valid type name", "Error", JOptionPane.ERROR_MESSAGE );
+					}
 					
 				} else {
 					//do nothing for now
@@ -632,10 +638,27 @@ public class budgetProgram implements Serializable{
 		{
 			public void actionPerformed(ActionEvent event)
 				{
-					try
+					
+					//create regdata
+					RegistrationData regData = new RegistrationData();
+					regData.setName( newPayName.getText() );
+					regData.setAmount( newPayAmount.getText() );
+					regData.setDate1 ( newPayDate.getText() );
+					//Validation
+					//create list of validation rules to try
+					ArrayList<RegistrationRule> rulesList = new ArrayList<RegistrationRule>();
+					rulesList.add( new NameValidationRule() );
+					rulesList.add( new AmountValidationRule() );
+					rulesList.add( new DateValidationRule() );
+					rulesList.add( new TypeValidationRule() );
+					
+				try //this is continuing to run even if error caught above. Can stop that? Could use boolean return from Validate instead of void
+				{
+					//try list of validation rules
+					for( RegistrationRule rule: rulesList )
 					{
-				
-				//need to add validation
+						rule.validate(regData);
+					}
 				
 					newPayment.setName( newPayName.getText() );
 					newPayment.setAmount( Double.parseDouble( newPayAmount.getText() ) );
@@ -644,20 +667,28 @@ public class budgetProgram implements Serializable{
 					newPayment.setDatePaid( newPayDate.getText() );
 					model.addElement(newPayment); //this adds the NAME to the list, meaning something gets added.
 					//now we need to add it to the JList of Payments. Name displays with a ListCellRenderer or toString
-					} catch(Exception ex) {
-						ex.printStackTrace();
-					}
+					
 					//SERIALIZATION OF DATA INTO SAVE FILE
-					finally
-					{
-						new budgetProgram().exportData(payList);
+					new budgetProgram().exportData(payList);
 					
 						//close JFrame
 						newPayFrame.setVisible(false);
 						newPayFrame.dispose();
-					}
+						
+				} catch (IllegalArgumentException ex) {
+					JOptionPane.showMessageDialog( null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE );
+				
+				} catch(Exception ex) {
+					ex.printStackTrace(); //to catch any errors that happen above after validation
 				}
-		}
+ 
+ 					//eliminated Finally block to prevent errors being saved.
+ 
+				}//close actionPerformed
+		}//close paymentSaveListener
+		
+		
+		
 		JButton saveNewPayment = new JButton("Save Payment");
 		saveNewPayment.addActionListener( new paymentSaveListener() );
 		
@@ -685,6 +716,90 @@ public class budgetProgram implements Serializable{
 	
 	}//end newPaymentGo()
 	
+	//data validation classes
+	//create functional interface
+	public interface RegistrationRule
+	{
+		public void validate(RegistrationData regData);
+	}
+	
+	public class RegistrationData
+	{
+		private String name;
+		private String amount;
+		private String date1; //for if I want to do date validation
+		private payType type;
+		
+		public void setName(String n)
+		{
+			name = n;
+		}
+		
+		public void setAmount(String a)
+		{
+			amount = a;
+		}
+		
+		public void setDate1(String d)
+		{
+			date1 = d;
+		}
+		
+		public void setType(payType t)
+		{
+			type = t;
+		}
+	}
+	
+	public class NameValidationRule implements RegistrationRule
+	{
+		@Override
+		public void validate(RegistrationData regData)
+		{
+			if(regData.name == null || regData.name.trim().equals(""))
+			{
+				throw new IllegalArgumentException("Please enter a name");
+			}
+		}
+	}
+	
+	public class AmountValidationRule implements RegistrationRule
+	{
+		@Override
+		public void validate(RegistrationData regData)
+		{
+			if(regData.amount == null || regData.amount.trim().equals(""))
+			{
+				throw new IllegalArgumentException("Please enter an amount");
+			}
+		}
+	}
+	
+	public class DateValidationRule implements RegistrationRule
+	{
+		@Override
+		public void validate(RegistrationData regData)
+		{
+			if(regData.date1 == null || regData.date1.trim().equals(""))
+			{
+				throw new IllegalArgumentException("Please enter a date");
+			}
+		}
+	}
+	
+	public class TypeValidationRule implements RegistrationRule
+	{
+		@Override
+		public void validate(RegistrationData regData)
+		{
+			if(regData.type == null || regData.type.toString().equals(""))
+			{
+				throw new IllegalArgumentException("Please select a type");
+			}
+		}
+	}
+	
+	
 	
 	/*
 	What goes into Payments? 
@@ -698,7 +813,7 @@ public class budgetProgram implements Serializable{
 		private payType Type;
 		private String datePaid;
 		private String dateAdded;
-		private String payNote;
+		private String payNote; //when/if I implement an interface for viewing payment details, can be viewed.
 
 		private Payment()
 		{
