@@ -39,7 +39,7 @@ public class budgetProgram implements Serializable{
 	ArrayList<payType> payTypeList = new ArrayList<payType>();
 	JPanel rightPanel = new JPanel(new GridBagLayout()); 
 	JPanel scrollablePanel = new JPanel();
-	ArrayList<JCheckBox> checkList = new ArrayList<JCheckBox>(); //could probably hash to a payType
+	//ArrayList<JCheckBox> checkList = new ArrayList<JCheckBox>(); //could probably hash to a payType
 	
 	public static void main(String[] args){
 		new budgetProgram().go();
@@ -85,9 +85,9 @@ public class budgetProgram implements Serializable{
 		}
 
 		class rightPanelClass{
-			//ArrayList<JCheckBox> checkList = new ArrayList<JCheckBox>(); //initialized in budgetProgram
+			
 			public void createRightPanel()
-			{
+			{	
 				//RIGHT PANEL 
 
 				//create right comboBox and checkboxes
@@ -109,14 +109,10 @@ public class budgetProgram implements Serializable{
 				gbc.gridy = 1;
 				gbc.gridheight = 2;
 				gbc.ipady = 50;
-				gbc.ipadx = 125;
+				//gbc.ipadx = 125;
 				gbc.insets = new Insets(10,30,0,30);
 		
 		
-				//**** for testing. These need to be generated from the payment objects.
-				//String[] payTypes = {"Fun","Food","Gas","Rent","Utilities", "Athletics","Health"};
-				//ArrayList<payType> payTypeList = new ArrayList<payType>();    NOW DECLARED AT START
-				//for each item in JList, iterate and fill out payTypeList from the payTypes
 				for(int i = 0; i < payListModel.getSize(); i++)
 				{
 					Payment tempPay = (Payment) payListModel.getElementAt(i);
@@ -128,7 +124,7 @@ public class budgetProgram implements Serializable{
 					}
 			
 				}
-		
+
 				//typeBorder setBorder for scrollablePanel goes in typeScroller goes in rightPanel
 				//JPanel scrollablePanel = new JPanel();
 				TitledBorder typeBorder = new TitledBorder(new LineBorder(Color.black),"Payment Types",TitledBorder.CENTER,TitledBorder.BELOW_TOP);
@@ -137,30 +133,71 @@ public class budgetProgram implements Serializable{
 		
 		
 				//create a JCheckBox for each payType in payTypeList
-				//scrollablePanel.removeAll(); //clean the list out to create all new components
-				checkList.clear();
-				for(payType pt: payTypeList)
+				scrollablePanel.removeAll(); //clean the list out to create all new components
+				final JList checkList = new JList(createTypeArray(payTypeList));	
+				checkList.setCellRenderer( new CheckListRenderer() );
+				checkList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
+				checkList.addMouseListener( new MouseAdapter() 
 				{
-					//scrollablePanel.add( new JCheckBox( pt.getTypeName(),pt.getSelected() ) );
-					checkList.add( new JCheckBox( pt.getTypeName(),pt.getSelected() ) );
-				}
-			
-				//add scrollablePanel to typeScroller	
-				JScrollPane typeScroller = new JScrollPane(scrollablePanel);	
+					public void mouseClicked(MouseEvent e)
+					{
+						int index = checkList.locationToIndex( e.getPoint() );
+						payType item = (payType) checkList.getModel().getElementAt(index);
+						item.setSelected( !item.getSelected() );
+						Rectangle rect = checkList.getCellBounds(index, index);
+						checkList.repaint(rect);
+					}
+				});
+
+				
+				//add scrollablePanel to typeScroller
+				JScrollPane typeScroller = new JScrollPane(checkList);	
 				typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 				typeScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+				
 				//add typeScroller to rightPanel
-				rightPanel.add(typeScroller, gbc);
+				scrollablePanel.add(typeScroller);
+				rightPanel.add(scrollablePanel, gbc);
+
 		
 				gbc.gridx = 0;
 				gbc.gridy = 2;
 				gbc.gridheight = 1;
 				gbc.insets = new Insets(0,0,0,0);
-				rightPanel.add((Box.createRigidArea( new Dimension( 150, 0 ) ) ), gbc);
 				
 				frame.getContentPane().add(BorderLayout.EAST,rightPanel);
 			}
+			
+			private payType[] createTypeArray(ArrayList<payType> list){
+				int n = list.size();
+				payType[] typeArray = new payType[n];
+				for(int i = 0; i < n; i++)
+				{
+					typeArray[i] = list.get(i); //this gets the same element. Do I need to create a new one?
+				}
+				
+				return typeArray;
+			}
+			
+			class CheckListRenderer extends JCheckBox implements ListCellRenderer
+			{
+				public CheckListRenderer()
+				{
+					setBackground(UIManager.getColor("List.textBackground"));
+     				setForeground(UIManager.getColor("List.textForeground"));
+				}
+				
+				public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean hasFocus ) 
+				{
+					setEnabled( list.isEnabled() );
+					setSelected( ((payType) value).getSelected() );
+					setFont( list.getFont() );
+					setText( value.toString() );
+					return this;
+				}
+			}
 		}
+		
 
 		//create center stats area
 		JPanel statsPanel = new JPanel();
@@ -173,17 +210,27 @@ public class budgetProgram implements Serializable{
 		
 		//statsPanel.setMaximumSize(new Dimension(650,400));
 		statsPanel.setPreferredSize(new Dimension(650, 300));
-		//statsPanel.setMinimumSize(new Dimension(650,300));
+		statsPanel.setMinimumSize(new Dimension(650,300));
 		JPanel statsPanelLeft = new JPanel();
 		JPanel statsPanelRight = new JPanel();
 		statsPanel.setLayout( new BoxLayout(statsPanel, BoxLayout.LINE_AXIS) );
 		//statsPanelLeft.setBackground(Color.green);
 		statsPanelLeft.setLayout( new GridBagLayout() );
 		statsPanelLeft.setPreferredSize( new Dimension(325,300) );
-		statsPanelRight.setPreferredSize( new Dimension(325,300) );
+		statsPanelRight.setPreferredSize( new Dimension(325,1200) );
+		//statsPanelRight.setMinimumSize( new Dimension(225, 300) );
+		//statsPanelRight.setMaximumSize( new Dimension(325, 2000) );
+		statsPanelRight.setLayout( new GridBagLayout() );
 		statsPanel.add(statsPanelLeft);
 		statsPanel.add( new JSeparator(SwingConstants.VERTICAL) );
-		statsPanel.add(statsPanelRight);
+		
+		//create scroller for right stats panel
+		JScrollPane statsScroller = new JScrollPane(statsPanelRight);	
+		statsScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		statsScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		statsScroller.setBorder( null );
+		//add the right panel
+		statsPanel.add(statsScroller);
 		
 		
 		graphPanel.setMaximumSize(new Dimension(650,500) );
@@ -201,6 +248,10 @@ public class budgetProgram implements Serializable{
 		mainPanel.add(statsPanel, gbc);
 
 
+		//initial creation of rightPanel
+		//placed here to initialize needed typeList values in totalStats class.
+		new rightPanelClass().createRightPanel();
+
 
 		//create stats class
 		class totalStats
@@ -216,99 +267,214 @@ public class budgetProgram implements Serializable{
 			private double selAvg;
 			private double selMax;
 			private double selMin;
+			private int selCount;
 			private JLabel totalAvgLabel;
 			private JLabel totalMaxLabel;
 			private JLabel totalMinLabel;
 			private JLabel selAvgLabel;
 			private JLabel selMaxLabel;
 			private JLabel selMinLabel;
-			ArrayList<String> displayStats;//need hash?
+			ArrayList<payType> enabledTypes = new ArrayList<payType>();
 			private JList selectedList;
 			
-		
 			public totalStats(){
+				//update stats based on payList and the enabled types
+				this.updateStats(payList);
+			}
+		
+			public void updateStats(JList payList)
+			{
 				avg = 0;
 				max = 0;
 				min = 0;
 				selAvg = 0;
 				selMax = 0;
 				selMin = 0;
-				this.updateStats(payList);
-			}
-		
-			public void updateStats(JList payList) //will need payTypesList as well
-			{
-				//Yeah, this section is ugly.
+				selCount = 0;
+				int typeIndex = -1;
 				
+				//create arrayList for enabled types
+				enabledTypes.clear();
+				for(payType pt: payTypeList)
+				{
+					if(pt.getSelected())
+					{
+						enabledTypes.add(pt);
+					}
+				}
+				
+			//create array of length of enabledTypes
+				int sizeNum = enabledTypes.size();
+				double typeStats[][] = new double[sizeNum][5];
+			
+				//create array of arrays for avg, max, min, totals of each type
 				ListModel model = payList.getModel();
-				
+			
 				//go through JList and do math on entire list of payments
 				//go through JList and do math on entire list of SELECTED payments
-				//if(model.getElementAt(i).payType.getSelected()
+
 				double total = 0;
+				double selTotal = 0;
+				
 				for(int i=0; i < model.getSize(); i++)
 				{
-					Payment pay = (Payment) model.getElementAt(i);
+					Payment pay = (Payment) model.getElementAt(i); //gets the payment
+				
 					double  currentPay =  pay.getAmount();
 					total = total + currentPay;
-					
+
 					if(currentPay > max)
 					{
 						max = currentPay;
 					}
-					
+				
 					if(i==0)
 					{
 						//for the first item, set baseline value
 						min = currentPay;
 					}
-					
+				
 					if(currentPay < min)
 					{
 						min = currentPay;
 					}
-				}//end iterate
 				
-				//add post-iterate logic
-				if(model.getSize() > 0){
-					avg = total / model.getSize();
-				}
+				try{
+					if( pay.getType().getSelected() ) //if the payment type is selected
+					{
+						for(int j=0;j<enabledTypes.size();j++)
+						{
+							if(pay.getType().getTypeName() == enabledTypes.get(j).getTypeName())
+							{
+								typeIndex = j;
+							}
+						}
+
+						selCount = selCount+1;
+						selTotal = selTotal + currentPay;
+						if(i==0)
+						{
+							//for the first item, set baseline value
+							selMin = currentPay;
+						}
+					
+						if(currentPay > selMax)
+						{
+							selMax = currentPay;
+						} 
+					
+						if (currentPay < selMin)
+						{
+							selMin = currentPay;
+						}
+					
+						//now to do the typeStats-specific numbers. 0 = avg, 1 = max, 2 = min, 3 = total, 4 = # of items
+						typeStats[typeIndex][0] = typeStats[typeIndex][0] + currentPay;
+					
+						if(currentPay > typeStats[typeIndex][1])
+						{
+							typeStats[typeIndex][1] = currentPay;
+						}
+						if((typeStats[typeIndex][2] == 0 && currentPay > 0) || currentPay < typeStats[typeIndex][2])
+						{
+							typeStats[typeIndex][2] = currentPay;
+						}
+					
+						typeStats[typeIndex][3] = typeStats[typeIndex][3] + currentPay;
+						typeStats[typeIndex][4] = typeStats[typeIndex][4] + 1;
+					}	//end if
+					} catch(ArrayIndexOutOfBoundsException ex) { }		
+						ex.printStackTrace();
+					}//end iterate
 				
-				//build UI with calculated values
-				JLabel totalAvgLabel = new JLabel("<HTML>The total average: " + NumberFormat.getCurrencyInstance().format(avg) + "</HTML>");
-				JLabel totalMaxLabel = new JLabel("<HTML>The total max: " + NumberFormat.getCurrencyInstance().format(max) + "</HTML>");
-				JLabel totalMinLabel = new JLabel("<HTML>The total min: " + NumberFormat.getCurrencyInstance().format(min) + "</HTML>");
-				JLabel selAvgLabel = new JLabel("<HTML>The selected average: " + NumberFormat.getCurrencyInstance().format(selAvg) + "</HTML>");
-				JLabel selMaxLabel = new JLabel("<HTML>The selected max: " + NumberFormat.getCurrencyInstance().format(selMax) + "</HTML>");
-				JLabel selMinLabel = new JLabel("<HTML>The selected min: " + NumberFormat.getCurrencyInstance().format(selMin) + "</HTML>");
+					//add post-iterate logic
+					if(model.getSize() > 0)
+					{
+						avg = total / model.getSize();
+					}
+					if(selCount > 0)
+					{
+						selAvg = selTotal / selCount;
+					}				
 				
-				//reset GBC
-				gbc.fill = GridBagConstraints.VERTICAL;
-				gbc.insets = new Insets(10,0,0,0);
-				gbc.gridheight = 1;
-				gbc.gridwidth = 1;
-				gbc.ipady = 0;
-				gbc.ipadx = 0;
-				gbc.gridy = 0;
-				gbc.gridx = 0;
-				gbc.anchor = GridBagConstraints.EAST;
-				statsPanelLeft.add(totalAvgLabel,gbc);
-				gbc.gridx = 0;
-				gbc.gridy = 1;
-				statsPanelLeft.add(totalMaxLabel,gbc);
-				gbc.gridx = 0;
-				gbc.gridy = 2;
-				statsPanelLeft.add(totalMinLabel,gbc);
-				gbc.gridx = 0;
-				gbc.gridy = 3;			
-				statsPanelLeft.add(selAvgLabel,gbc);
-				gbc.gridx = 0;
-				gbc.gridy = 4;
-				statsPanelLeft.add(selMaxLabel,gbc);
-				gbc.gridx = 0;
-				gbc.gridy = 5;
-				statsPanelLeft.add(selMinLabel,gbc);
-							
+					//build UI with calculated values - could have used an array, didn't.
+					JLabel totalAvgLabel = new JLabel("<HTML>The total average: " + NumberFormat.getCurrencyInstance().format(avg) + "</HTML>");
+					JLabel totalMaxLabel = new JLabel("<HTML>The total max: " + NumberFormat.getCurrencyInstance().format(max) + "</HTML>");
+					JLabel totalMinLabel = new JLabel("<HTML>The total min: " + NumberFormat.getCurrencyInstance().format(min) + "</HTML>");
+					JLabel totalTotalLabel = new JLabel("<HTML>The total expenses are: " + NumberFormat.getCurrencyInstance().format(total) + "</HTML>");
+					JLabel selAvgLabel = new JLabel("<HTML>The selected average: " + NumberFormat.getCurrencyInstance().format(selAvg) + "</HTML>");
+					JLabel selMaxLabel = new JLabel("<HTML>The selected max: " + NumberFormat.getCurrencyInstance().format(selMax) + "</HTML>");
+					JLabel selMinLabel = new JLabel("<HTML>The selected min: " + NumberFormat.getCurrencyInstance().format(selMin) + "</HTML>");
+					JLabel selTotalTotalLabel = new JLabel("<HTML>The selected total expenses are: " + NumberFormat.getCurrencyInstance().format(selTotal) + "</HTML>");
+				
+					//reset GBC
+					gbc.fill = GridBagConstraints.VERTICAL;
+					gbc.insets = new Insets(10,0,0,0);
+					gbc.gridheight = 1;
+					gbc.gridwidth = 1;
+					gbc.ipady = 0;
+					gbc.ipadx = 0;
+					gbc.gridy = 0;
+					gbc.gridx = 0;
+					gbc.anchor = GridBagConstraints.WEST;
+					statsPanelLeft.add(totalAvgLabel,gbc);
+					gbc.gridx = 0;
+					gbc.gridy = 1;
+					statsPanelLeft.add(totalMaxLabel,gbc);
+					gbc.gridx = 0;
+					gbc.gridy = 2;
+					statsPanelLeft.add(totalMinLabel,gbc);
+					gbc.gridx = 0;
+					gbc.gridy = 3;		
+					statsPanelLeft.add(totalTotalLabel,gbc);
+					gbc.insets = new Insets(35,0,0,0);
+					gbc.gridx = 0;
+					gbc.gridy = 5;
+					statsPanelLeft.add(selAvgLabel,gbc);
+					gbc.insets = new Insets(10,0,0,0);
+					gbc.gridx = 0;
+					gbc.gridy = 6;
+					statsPanelLeft.add(selMaxLabel,gbc);
+					gbc.gridx = 0;
+					gbc.gridy = 7;
+					statsPanelLeft.add(selMinLabel,gbc);
+					gbc.gridx = 0;
+					gbc.gridy = 8;
+					statsPanelLeft.add(selTotalTotalLabel,gbc);		
+					
+					//build the statsPanelRight
+					gbc.gridy = 0;
+					gbc.weightx = 1.0;
+					gbc.weighty = 0;
+					gbc.ipady = 5;
+					gbc.anchor = GridBagConstraints.PAGE_START;
+					gbc.insets = new Insets(0,0,0,0);
+					enabledTypes.forEach(item->   //enabledTypes needs to be refreshed with the refresh action
+					{
+						//need to pull item index, get matching index in typeStats, build 4 labels and add to panel
+						int getIndex = enabledTypes.indexOf(item);
+						
+						statsPanelRight.add( new JLabel("<HTML><u>" + item.getTypeName() + " stats:</u></HTML>"), gbc );
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel("Average: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][0])), gbc);
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel("Max: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][1])), gbc);
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel("Min: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][2])), gbc);
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel("Total: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][3])), gbc);
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel("Count: " + (int)typeStats[getIndex][4]), gbc);
+						gbc.gridy = gbc.gridy+1;
+						statsPanelRight.add( new JLabel(""),gbc);
+						gbc.gridy = gbc.gridy+1;
+
+												
+					});
+					gbc.weighty = 1;
+					gbc.gridy = gbc.gridy+1;
+					statsPanelRight.add( new JLabel(""),gbc); //fills the empty void and anchors to top
+					gbc.weighty = 0; //resets to 0 for future layout			
 			}//end updateStats
 		
 		
@@ -323,15 +489,22 @@ public class budgetProgram implements Serializable{
 			public void actionPerformed(ActionEvent event)
 			{	
 				statsPanelLeft.removeAll();
+				statsPanelRight.removeAll();
 				currentStats.updateStats(payList);
 				statsPanelLeft.revalidate();
 				statsPanelLeft.repaint();
+				statsPanelRight.revalidate();
+				statsPanelRight.repaint();
 				rightPanel.removeAll();
 				new rightPanelClass().createRightPanel();
 				rightPanel.revalidate();
 				rightPanel.repaint();
 			}
 		}
+		gbc.weighty = 1;
+		gbc.gridy = 3;
+		gbc.insets = new Insets(0,0,0,0);
+		gbc.anchor = GridBagConstraints.PAGE_END;
 		JButton refreshStatsButton = new JButton("Refresh");
 		refreshStatsButton.addActionListener( new RefreshStats() );
 		mainPanel.add(refreshStatsButton, gbc);
@@ -386,20 +559,11 @@ public class budgetProgram implements Serializable{
 		//add payScroller to layout manager
 		leftBox.add(payScroller);
 		leftBox.add(payControlsPanel);	
-	
-		
-
-		//initial creation of rightPanel
-		new rightPanelClass().createRightPanel();
-		
-		
 		
 		
 		 //Add base panels to frame
 		frame.getContentPane().add(BorderLayout.CENTER,mainPanel);
 		frame.getContentPane().add(BorderLayout.WEST,leftBox);
-				rightPanel.setBackground(Color.GREEN);
-		//frame.getContentPane().add(BorderLayout.EAST,rightPanel);
 		frame.setSize(1200,1000);
 		frame.setVisible(true);
 		frame.setLocationRelativeTo(null);
@@ -408,7 +572,7 @@ public class budgetProgram implements Serializable{
 	 
 	}//end go()
 	
-	public void newPaymentGo(DefaultListModel model, JList payList, ArrayList payTypeList) //needs to also take in ArrayList paymentTypeList
+	public void newPaymentGo(DefaultListModel model, JList payList, ArrayList payTypeList)
 	{
 		
 		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
@@ -616,13 +780,12 @@ public class budgetProgram implements Serializable{
 	{
 	
 		private String typeName;
-		private boolean isEnabled;
-		//private int numPayments;
+		private boolean isSelected;
 		
 		public payType(String s)
 		{
-			typeName = s;
-			isEnabled = true;
+			this.typeName = s;
+			isSelected = true;
 		}
 		
 		public String getTypeName()
@@ -632,15 +795,13 @@ public class budgetProgram implements Serializable{
 		
 		public boolean getSelected()
 		{
-			return isEnabled;
+			return isSelected;
 		}
 		
-		/*
-		//Need a method for saving payType
-		public void payTypeSave(JList payList){
-			
+		public void setSelected(boolean b)
+		{
+			isSelected = b;
 		}
-		*/
 		
 		public String toString()
 		{
