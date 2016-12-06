@@ -39,6 +39,7 @@ public class budgetProgram implements Serializable{
 	ArrayList<payType> payTypeList = new ArrayList<payType>();
 	JPanel rightPanel = new JPanel(new GridBagLayout()); 
 	JPanel scrollablePanel = new JPanel();
+	private JComboBox dateRange;
 	//ArrayList<JCheckBox> checkList = new ArrayList<JCheckBox>(); //could probably hash to a payType
 	
 	public static void main(String[] args){
@@ -55,10 +56,10 @@ public class budgetProgram implements Serializable{
 		Font titleFont = new Font("sanserif",Font.BOLD,36);
 
 		//create the default model
-		DefaultListModel payListModel = new DefaultListModel();
+		DefaultListModel<Payment> payListModel = new DefaultListModel<Payment>();
 		
 		//JList for Payments
-		JList payList = new JList (payListModel);
+		JList<Payment> payList = new JList<Payment> (payListModel);
 		payList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION ); //prevents multiple selection
 		
 		//import any existing data. I wanted to make this its own method, but this worked best with the current design.
@@ -70,7 +71,7 @@ public class budgetProgram implements Serializable{
 			ListModel inModel = inList.getModel();
 			for(int i = 0; i < inModel.getSize(); i++)
 				{
-					payListModel.addElement(inModel.getElementAt(i));
+					payListModel.addElement((Payment)inModel.getElementAt(i));
 				}
 
 			} catch (FileNotFoundException ex){
@@ -96,7 +97,13 @@ public class budgetProgram implements Serializable{
 		
 				//create comboBox, need to create public class and implement actionListener, will updateStats
 				String[] dateRanges = {"Today", "This Week","This Month","Last Week", "Last Month", "This Year", "Last Year"};
-				JComboBox dateRange = new JComboBox(dateRanges);
+				if(!(dateRange == null))
+				{
+					//do nothing: JComboBox already created
+				} else {
+					dateRange = new JComboBox<String>(dateRanges); //build it if dateRange has not already been built
+					dateRange.setSelectedIndex(2);
+				}
 				gbc.fill = GridBagConstraints.HORIZONTAL;
 				gbc.gridx = 0;
 				gbc.gridy = 0;
@@ -134,7 +141,7 @@ public class budgetProgram implements Serializable{
 		
 				//create a JCheckBox for each payType in payTypeList
 				scrollablePanel.removeAll(); //clean the list out to create all new components
-				final JList checkList = new JList(createTypeArray(payTypeList));	
+				final JList<payType> checkList = new JList<payType>(createTypeArray(payTypeList));	
 				checkList.setCellRenderer( new CheckListRenderer() );
 				checkList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
 				checkList.addMouseListener( new MouseAdapter() 
@@ -252,7 +259,6 @@ public class budgetProgram implements Serializable{
 		//placed here to initialize needed typeList values in totalStats class.
 		new rightPanelClass().createRightPanel();
 
-
 		//create stats class
 		class totalStats
 		{//Inner class of budgetProgram.go()
@@ -276,6 +282,12 @@ public class budgetProgram implements Serializable{
 			private JLabel selMinLabel;
 			ArrayList<payType> enabledTypes = new ArrayList<payType>();
 			private JList selectedList;
+			private String selectedDate;
+			private Calendar calBefore;
+			private Calendar calAfter;
+			private Calendar calToday;
+			private Calendar calPay;
+			
 			
 			public totalStats(){
 				//update stats based on payList and the enabled types
@@ -292,6 +304,80 @@ public class budgetProgram implements Serializable{
 				selMin = 0;
 				selCount = 0;
 				int typeIndex = -1;
+				
+				//"Today", "This Week","This Month","Last Week", "Last Month", "This Year", "Last Year"
+				//Calendar section: Determine which selection was made and what the appropriate date range is
+				calToday = Calendar.getInstance();
+				calToday.set(Calendar.HOUR_OF_DAY,0);
+				calToday.clear(Calendar.MINUTE);
+				calToday.clear(Calendar.SECOND);
+				calToday.clear(Calendar.MILLISECOND);
+				calPay = (Calendar)calToday.clone();
+				//zeros out the calendar to midnight, since we only care about day
+				
+				//get the selected time period
+				selectedDate = dateRange.getSelectedItem().toString();
+				switch ( selectedDate ) 
+				{
+				//logic will be: if(!( paymentDate < calBefore && paymentDate > calAfter  ) )
+					case "Today": 
+						//!(before today and after today)
+						calBefore = (Calendar)calToday.clone();
+						calAfter = (Calendar)calToday;
+						break;
+					case "This Week":
+					//!(before first day of this week and after last day of this week)
+						calBefore = (Calendar)calToday.clone();	//copy calToday's format
+						calBefore.set(Calendar.DAY_OF_WEEK, calBefore.getFirstDayOfWeek());		//get the first day of this week
+						calAfter = (Calendar)calBefore.clone();		//copy first day of this week
+						calAfter.add(Calendar.DAY_OF_WEEK,6);	//add 6 more days to it to get the last day of this week
+						break;
+					case "This Month":
+						calBefore = (Calendar)calToday.clone();	//copy calToday format, get today
+						calBefore.set(Calendar.DAY_OF_MONTH,1); //set before to first day of this month
+						calAfter = (Calendar)calBefore.clone();
+						calAfter.add(Calendar.MONTH,1); //set calAfter to first day of next month
+						calAfter.add(Calendar.DATE,-1); //set calAfter to last day of this month
+						break;
+					case "Last Week":
+					//!(before first day of last week and after last day of last week)
+						calBefore = (Calendar)calToday.clone();		//copy calToday's format
+						calBefore.set(Calendar.DAY_OF_WEEK, calBefore.getFirstDayOfWeek());		//get the first day of this week
+						calAfter = (Calendar)calBefore.clone(); 	//sets calAfter to the first day of this week
+						calBefore.add(Calendar.DATE,-7); //gets the first day of last week
+						calAfter.add(Calendar.DATE,-1);		//gets last day of last week
+						break;
+					case "Last Month":
+					//!(before the first day of last month, after the last day of last month)
+						calBefore = (Calendar)calToday.clone();	//copy calToday format, get today
+						calBefore.set(Calendar.DAY_OF_MONTH,1); //set calBefore to first day of this month
+						calAfter = (Calendar)calBefore.clone();	//set calAfter to the first day of this month
+						calBefore.add(Calendar.MONTH,-1); //subtract a month from the first day of this month = first of last month
+						calAfter.add(Calendar.DATE,-1);	//subtract a day from first day of this month, becomes last day of last month
+						break;
+					case "This Year":
+						calBefore = (Calendar)calToday.clone();	//copy calToday format, get today
+						calBefore.set(Calendar.MONTH,Calendar.JANUARY);
+						calBefore.set(Calendar.DAY_OF_MONTH,1); //Jan 1 of this year
+						calAfter = (Calendar)calBefore.clone();
+						calAfter.set(Calendar.MONTH,Calendar.DECEMBER); 
+						calAfter.set(Calendar.DAY_OF_MONTH,31);	//Dec. 31 of this year
+						break;
+					case "Last Year":
+						calBefore = (Calendar)calToday.clone();	//copy calToday format, get today
+						calBefore.set(Calendar.MONTH,Calendar.JANUARY);
+						calBefore.add(Calendar.YEAR,-1);
+						calBefore.set(Calendar.DAY_OF_MONTH,1); //Jan 1 of last year
+						calAfter = (Calendar)calBefore.clone();
+						calAfter.set(Calendar.MONTH,Calendar.DECEMBER); 
+						calAfter.set(Calendar.DAY_OF_MONTH,31);	//Dec. 31 of last year
+						break;
+						
+					//implement default:	
+					//break;
+				}
+				
+				//calBefore and calAfter are now set. Implement logic after payType.getSelected() to determine if the payment date is in range
 				
 				//create arrayList for enabled types
 				enabledTypes.clear();
@@ -339,54 +425,76 @@ public class budgetProgram implements Serializable{
 						min = currentPay;
 					}
 				
-				try{
-					if( pay.getType().getSelected() ) //if the payment type is selected
+				
+				
+					//insert logic for checking to see if payment date is within selected range
+					SimpleDateFormat newDate = new SimpleDateFormat("MM/dd/yyyy", Locale.ENGLISH);
+					try{
+						calPay.setTime(newDate.parse(pay.getDatePaid()));
+					} catch (NullPointerException ex)
 					{
-						for(int j=0;j<enabledTypes.size();j++)
+						System.out.println("calPay null");
+					} catch(Exception ex)
+					{
+						ex.printStackTrace();
+					} 
+					
+					//System.out.println( !( calPay.before(calBefore) || calPay.after(calAfter) ));
+				//daterange logic
+				if( !(calPay.before(calBefore) || calPay.after(calAfter) ) ){
+					try{
+						if( pay.getType().getSelected() ) //if the payment type is selected
 						{
-							if(pay.getType().getTypeName() == enabledTypes.get(j).getTypeName())
+					
+
+					
+							for(int j=0;j<enabledTypes.size();j++) //this section determines which index this payment type is in typeStats by name matching
 							{
-								typeIndex = j;
+								if(pay.getType().getTypeName() == enabledTypes.get(j).getTypeName())
+								{
+									typeIndex = j;
+								}
+							}
+
+							selCount = selCount+1;
+							selTotal = selTotal + currentPay;
+							if(i==0)
+							{
+								//for the first item, set baseline value
+								selMin = currentPay;
+							}
+					
+							if(currentPay > selMax)
+							{
+								selMax = currentPay;
+							} 
+					
+							if (currentPay < selMin)
+							{
+								selMin = currentPay;
+							}
+					
+							//now to do the typeStats-specific numbers. 0 = avg, 1 = max, 2 = min, 3 = total, 4 = # of items
+							typeStats[typeIndex][0] = typeStats[typeIndex][0] + currentPay;
+					
+							if(currentPay > typeStats[typeIndex][1])
+							{
+								typeStats[typeIndex][1] = currentPay;
+							}
+							if((typeStats[typeIndex][2] == 0 && currentPay > 0) || currentPay < typeStats[typeIndex][2])
+							{
+								typeStats[typeIndex][2] = currentPay;
+							}
+					
+							typeStats[typeIndex][3] = typeStats[typeIndex][3] + currentPay;
+							typeStats[typeIndex][4] = typeStats[typeIndex][4] + 1;
+						}	//end if
+						} catch(ArrayIndexOutOfBoundsException ex) 
+							{ 		
+							ex.printStackTrace();
 							}
 						}
-
-						selCount = selCount+1;
-						selTotal = selTotal + currentPay;
-						if(i==0)
-						{
-							//for the first item, set baseline value
-							selMin = currentPay;
-						}
-					
-						if(currentPay > selMax)
-						{
-							selMax = currentPay;
-						} 
-					
-						if (currentPay < selMin)
-						{
-							selMin = currentPay;
-						}
-					
-						//now to do the typeStats-specific numbers. 0 = avg, 1 = max, 2 = min, 3 = total, 4 = # of items
-						typeStats[typeIndex][0] = typeStats[typeIndex][0] + currentPay;
-					
-						if(currentPay > typeStats[typeIndex][1])
-						{
-							typeStats[typeIndex][1] = currentPay;
-						}
-						if((typeStats[typeIndex][2] == 0 && currentPay > 0) || currentPay < typeStats[typeIndex][2])
-						{
-							typeStats[typeIndex][2] = currentPay;
-						}
-					
-						typeStats[typeIndex][3] = typeStats[typeIndex][3] + currentPay;
-						typeStats[typeIndex][4] = typeStats[typeIndex][4] + 1;
-					}	//end if
-					} catch(ArrayIndexOutOfBoundsException ex) { 		
-						ex.printStackTrace();
-						}
-					}//end iterate
+					}//end forloop iterate through all payments
 				
 					//add post-iterate logic
 					if(model.getSize() > 0)
@@ -396,6 +504,15 @@ public class budgetProgram implements Serializable{
 					if(selCount > 0)
 					{
 						selAvg = selTotal / selCount;
+					}
+					
+					//get the average for each selected type
+					for(int k = 0; k < typeStats.length; k++)
+					{
+						if(typeStats[k][4] > 0) //is 0 by default, so no worries about null
+						{
+							typeStats[k][0] = typeStats[k][0]/typeStats[k][4];
+						}
 					}				
 				
 					//build UI with calculated values - could have used an array, didn't.
@@ -409,7 +526,10 @@ public class budgetProgram implements Serializable{
 					JLabel selTotalTotalLabel = new JLabel("<HTML>The selected total expenses are: " + NumberFormat.getCurrencyInstance().format(selTotal) + "</HTML>");
 				
 					//reset GBC
+					
 					gbc.fill = GridBagConstraints.VERTICAL;
+					gbc.weightx = 0;
+					gbc.weighty = 0;
 					gbc.insets = new Insets(10,0,0,0);
 					gbc.gridheight = 1;
 					gbc.gridwidth = 1;
@@ -485,7 +605,7 @@ public class budgetProgram implements Serializable{
 		totalStats currentStats = new totalStats();
 		
 		
-		class RefreshStats implements ActionListener
+		class RefreshStats implements ActionListener//, ItemListener  //cannot use this inside of newPaymentGo() :(
 		{
 			public void actionPerformed(ActionEvent event)
 			{	
@@ -509,6 +629,11 @@ public class budgetProgram implements Serializable{
 		JButton refreshStatsButton = new JButton("Refresh");
 		refreshStatsButton.addActionListener( new RefreshStats() );
 		mainPanel.add(refreshStatsButton, gbc);
+		
+		
+		//Will want to add a listener here for dateRange to refresh stats on new date select
+		
+		
 
 
 		//crate box layout manager containing scroller and flowlayout with buttons 
@@ -582,7 +707,6 @@ public class budgetProgram implements Serializable{
 		Payment newPayment = new Payment();
 		JPanel newPaymentPanel = new JPanel();
 		newPaymentPanel.setLayout( new BoxLayout(newPaymentPanel,BoxLayout.PAGE_AXIS));
-		
 		//add fields to take new Payment input
 		
 		//first, create actionListener for payType combo box
@@ -618,6 +742,8 @@ public class budgetProgram implements Serializable{
 			newPayType.addActionListener( new payTypeSelectListener() );
 		JTextField newPayDate = new JTextField(today);
 		JTextArea newPayNote = new JTextArea(6,20);
+		newPayNote.setLineWrap(true);
+		JScrollPane textAreaScroller = new JScrollPane(newPayNote);
 		JLabel newPayNameLabel = new JLabel("Payment Name: ");
 			newPayNameLabel.setLabelFor(newPayName);
 		JLabel newPayAmountLabel = new JLabel("Payment Amount: ");
@@ -643,7 +769,8 @@ public class budgetProgram implements Serializable{
 					RegistrationData regData = new RegistrationData();
 					regData.setName( newPayName.getText() );
 					regData.setAmount( newPayAmount.getText() );
-					regData.setDate1 ( newPayDate.getText() );
+					regData.setDate1( newPayDate.getText() );
+					regData.setType( (payType)newPayType.getSelectedItem() );
 					//Validation
 					//create list of validation rules to try
 					ArrayList<RegistrationRule> rulesList = new ArrayList<RegistrationRule>();
@@ -674,7 +801,10 @@ public class budgetProgram implements Serializable{
 						//close JFrame
 						newPayFrame.setVisible(false);
 						newPayFrame.dispose();
-						
+				
+				} catch(NumberFormatException ex) { //will only trigger on the Amount conversion to double
+					JOptionPane.showMessageDialog( null, "Please enter a valid amount", "Error", JOptionPane.ERROR_MESSAGE );
+				
 				} catch (IllegalArgumentException ex) {
 					JOptionPane.showMessageDialog( null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE );
 				
@@ -702,7 +832,7 @@ public class budgetProgram implements Serializable{
 		newPaymentPanel.add(newPayDateLabel);
 		newPaymentPanel.add(newPayDate);
 		newPaymentPanel.add(newPayNoteLabel);
-		newPaymentPanel.add(newPayNote);
+		newPaymentPanel.add(textAreaScroller);
 		newPaymentPanel.add(Box.createRigidArea( new Dimension(95, 0) ) );
 		newPaymentPanel.add(Box.createRigidArea( new Dimension(0, 25) ) );
 		newPaymentPanel.add(saveNewPayment);
@@ -711,6 +841,7 @@ public class budgetProgram implements Serializable{
 		newPayFrame.getContentPane().add(newPaymentPanel,gbc);
 		
 		newPayFrame.setSize(500,450);
+		newPayFrame.setMaximumSize( new Dimension(500,450));
 		newPayFrame.setLocationRelativeTo(null);
 		newPayFrame.setVisible(true);
 	
@@ -772,6 +903,7 @@ public class budgetProgram implements Serializable{
 			{
 				throw new IllegalArgumentException("Please enter an amount");
 			}
+			
 		}
 	}
 	
