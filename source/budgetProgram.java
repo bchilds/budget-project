@@ -50,6 +50,7 @@ public class budgetProgram implements Serializable{
 	
 	public void go(){
 		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(0,0,0,0);
 		frame = new JFrame("Budget Yourself");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainPanel = new JPanel();
@@ -86,7 +87,8 @@ public class budgetProgram implements Serializable{
 		}
 
 		class rightPanelClass{
-			
+						
+			@SuppressWarnings("unchecked")  //yeah it sucks, but I can't figure out the warning caused by the setCellRender generic
 			public void createRightPanel()
 			{	
 				//RIGHT PANEL 
@@ -107,6 +109,8 @@ public class budgetProgram implements Serializable{
 				gbc.fill = GridBagConstraints.HORIZONTAL;
 				gbc.gridx = 0;
 				gbc.gridy = 0;
+				gbc.weighty = 0;
+				gbc.weightx = 0;
 				gbc.insets = new Insets(0,30,0,30);
 				rightPanel.add(dateRange, gbc);
 		
@@ -156,7 +160,7 @@ public class budgetProgram implements Serializable{
 					}
 				});
 
-				
+
 				//add scrollablePanel to typeScroller
 				JScrollPane typeScroller = new JScrollPane(checkList);	
 				typeScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -185,7 +189,7 @@ public class budgetProgram implements Serializable{
 				
 				return typeArray;
 			}
-			
+
 			class CheckListRenderer extends JCheckBox implements ListCellRenderer
 			{
 				public CheckListRenderer()
@@ -221,7 +225,6 @@ public class budgetProgram implements Serializable{
 		JPanel statsPanelLeft = new JPanel();
 		JPanel statsPanelRight = new JPanel();
 		statsPanel.setLayout( new BoxLayout(statsPanel, BoxLayout.LINE_AXIS) );
-		//statsPanelLeft.setBackground(Color.green);
 		statsPanelLeft.setLayout( new GridBagLayout() );
 		statsPanelLeft.setPreferredSize( new Dimension(325,300) );
 		statsPanelRight.setPreferredSize( new Dimension(325,1200) );
@@ -439,15 +442,11 @@ public class budgetProgram implements Serializable{
 						ex.printStackTrace();
 					} 
 					
-					//System.out.println( !( calPay.before(calBefore) || calPay.after(calAfter) ));
 				//daterange logic
 				if( !(calPay.before(calBefore) || calPay.after(calAfter) ) ){
 					try{
 						if( pay.getType().getSelected() ) //if the payment type is selected
 						{
-					
-
-					
 							for(int j=0;j<enabledTypes.size();j++) //this section determines which index this payment type is in typeStats by name matching
 							{
 								if(pay.getType().getTypeName() == enabledTypes.get(j).getTypeName())
@@ -458,7 +457,7 @@ public class budgetProgram implements Serializable{
 
 							selCount = selCount+1;
 							selTotal = selTotal + currentPay;
-							if(i==0)
+							if(selMin == 0)//I will never have a selected payment that is 0, so get rid of default 0
 							{
 								//for the first item, set baseline value
 								selMin = currentPay;
@@ -575,7 +574,7 @@ public class budgetProgram implements Serializable{
 						//need to pull item index, get matching index in typeStats, build 4 labels and add to panel
 						int getIndex = enabledTypes.indexOf(item);
 						
-						statsPanelRight.add( new JLabel("<HTML><u>" + item.getTypeName() + " stats:</u></HTML>"), gbc );
+						statsPanelRight.add( new JLabel("<HTML><u>" + item.getTypeName() + " stats</u></HTML>"), gbc );
 						gbc.gridy = gbc.gridy+1;
 						statsPanelRight.add( new JLabel("Average: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][0])), gbc);
 						gbc.gridy = gbc.gridy+1;
@@ -583,7 +582,7 @@ public class budgetProgram implements Serializable{
 						gbc.gridy = gbc.gridy+1;
 						statsPanelRight.add( new JLabel("Min: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][2])), gbc);
 						gbc.gridy = gbc.gridy+1;
-						statsPanelRight.add( new JLabel("Total: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][3])), gbc);
+						statsPanelRight.add( new JLabel("<HTML><u>Total: " + NumberFormat.getCurrencyInstance().format(typeStats[getIndex][3]) + "</u></HTML>"), gbc);
 						gbc.gridy = gbc.gridy+1;
 						statsPanelRight.add( new JLabel("Count: " + (int)typeStats[getIndex][4]), gbc);
 						gbc.gridy = gbc.gridy+1;
@@ -698,8 +697,8 @@ public class budgetProgram implements Serializable{
 	 
 	}//end go()
 	
-	public void newPaymentGo(DefaultListModel model, JList payList, ArrayList payTypeList)
-	{
+	public void newPaymentGo(DefaultListModel<Payment> model, JList payList, ArrayList<payType> payTypeList)
+	{//takes in the Payment list model, the JList of Payments, and the ArrayList of current payTypes
 		
 		//make a new panel and populate it with a new instance of a Payment. We want to return that payment.
 		JFrame newPayFrame = new JFrame("New Payment");
@@ -736,7 +735,7 @@ public class budgetProgram implements Serializable{
 
 		JTextField newPayName = new JTextField();
 		JTextField newPayAmount = new JTextField();
-		JComboBox newPayType = new JComboBox();
+		JComboBox<payType> newPayType = new JComboBox<payType>();
 			newPayType.setEditable(true);
 			payTypeList.forEach( item-> newPayType.addItem(item) ); //adds all the payTypes into the combo box
 			newPayType.addActionListener( new payTypeSelectListener() );
@@ -937,9 +936,8 @@ public class budgetProgram implements Serializable{
 	What goes into Payments? 
 	double Amount, payType Type, string datePaid, string dateAdded, string payNote, string payName
 	*/
-	public class Payment implements Serializable
+	public class Payment implements Serializable //might want to implement Comparable by datePaid
 	{
-	
 		private String payName;
 		private double Amount;
 		private payType Type;
